@@ -16,8 +16,10 @@ import com.thoughtworks.xstream.io.HierarchicalStreamWriter;
 import com.thoughtworks.xstream.io.copy.HierarchicalStreamCopier;
 import com.thoughtworks.xstream.io.xml.AbstractXMLReaderTest;
 import com.thoughtworks.xstream.io.xml.Xpp3Driver;
+import com.thoughtworks.xstream.security.InputManipulationException;
 
 import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
 import java.io.StringReader;
 import java.io.ByteArrayInputStream;
 
@@ -76,4 +78,18 @@ public class BinaryStreamTest extends AbstractXMLReaderTest {
 
     }
 
+    @SuppressWarnings("resource")
+    public void testHandleMaliciousInputsOfIdMappingTokens() {
+        // Insert two successive id mapping tokens into the stream
+        final byte[] byteArray = new byte[8];
+        byteArray[0] = byteArray[4] = 10;
+        byteArray[1] = byteArray[5] = -127;
+
+        final InputStream in = new ByteArrayInputStream(byteArray);
+        try {
+            new BinaryStreamReader(in);
+            fail("Thrown " + InputManipulationException.class.getName() + " expected");
+        } catch (final InputManipulationException e) {
+        }
+    }
 }
