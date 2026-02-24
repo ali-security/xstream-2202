@@ -13,6 +13,7 @@ package com.thoughtworks.xstream.converters.collections;
 
 import com.thoughtworks.xstream.converters.MarshallingContext;
 import com.thoughtworks.xstream.converters.UnmarshallingContext;
+import com.thoughtworks.xstream.core.SecurityUtils;
 import com.thoughtworks.xstream.io.ExtendedHierarchicalStreamWriterHelper;
 import com.thoughtworks.xstream.io.HierarchicalStreamReader;
 import com.thoughtworks.xstream.io.HierarchicalStreamWriter;
@@ -110,7 +111,9 @@ public class MapConverter extends AbstractCollectionConverter {
         Object value = readItem(reader, context, map);
         reader.moveUp();
 
+        long now = System.currentTimeMillis();
         target.put(key, value);
+        SecurityUtils.checkForCollectionDoSAttack(context, now);
     }
 
     protected Object createCollection(Class type) {

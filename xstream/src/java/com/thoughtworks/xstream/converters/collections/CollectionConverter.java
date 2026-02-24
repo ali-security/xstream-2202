@@ -13,6 +13,7 @@ package com.thoughtworks.xstream.converters.collections;
 
 import com.thoughtworks.xstream.converters.MarshallingContext;
 import com.thoughtworks.xstream.converters.UnmarshallingContext;
+import com.thoughtworks.xstream.core.SecurityUtils;
 import com.thoughtworks.xstream.core.JVM;
 import com.thoughtworks.xstream.io.HierarchicalStreamReader;
 import com.thoughtworks.xstream.io.HierarchicalStreamWriter;
@@ -96,7 +97,9 @@ public class CollectionConverter extends AbstractCollectionConverter {
     protected void addCurrentElementToCollection(HierarchicalStreamReader reader, UnmarshallingContext context,
         Collection collection, Collection target) {
         Object item = readItem(reader, context, collection);
+        long now = System.currentTimeMillis();
         target.add(item);
+        SecurityUtils.checkForCollectionDoSAttack(context, now);
     }
 
     protected Object createCollection(Class type) {
