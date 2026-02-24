@@ -54,6 +54,8 @@ import java.util.regex.Pattern;
 
 import com.thoughtworks.xstream.converters.ConversionException;
 import com.thoughtworks.xstream.converters.Converter;
+import com.thoughtworks.xstream.converters.MarshallingContext;
+import com.thoughtworks.xstream.converters.UnmarshallingContext;
 import com.thoughtworks.xstream.converters.ConverterLookup;
 import com.thoughtworks.xstream.converters.ConverterRegistry;
 import com.thoughtworks.xstream.converters.DataHolder;
@@ -753,6 +755,50 @@ public class XStream {
         registerConverter(new ExternalizableConverter(mapper, classLoaderReference), PRIORITY_LOW);
 
         registerConverter(new NullConverter(), PRIORITY_VERY_HIGH);
+
+        // common CVEs blacklist https://x-stream.github.io/security.html#workaround
+        registerConverter(new Converter() {
+            public boolean canConvert(Class type) {
+                return type != null
+                && (type == java.beans.EventHandler.class
+                    || type == java.lang.ProcessBuilder.class
+                    || type == java.lang.Void.class
+                    || type.getName().equals("javax.imageio.ImageIO$ContainsFilter")
+                    || type.getName().equals("sun.awt.datatransfer.DataTransferer$IndexOrderComparator")
+                    || type.getName().equals("com.sun.corba.se.impl.activation.ServerTableEntry")
+                    || type.getName().equals("com.sun.tools.javac.processing.JavacProcessingEnvironment$NameProcessIterator")
+                    || type.getName().matches("javafx\\.collections\\.ObservableList\\$.*")
+                    || type.getName().matches(".*\\$ServiceNameIterator")
+                    || type.getName().matches(".*\\$GetterSetterReflection")
+                    || type.getName().matches(".*\\$LazyIterator")
+                    || type.getName().matches(".*\\$ProxyLazyValue")
+                    || type.getName().matches(".*\\.bcel\\..*\\.util\\.ClassLoader")
+                    || type.getName().matches(".*\\.ws\\.client\\.sei\\..*")
+                    || type.getName().matches("com\\.sun\\.jndi\\..*Enumerat(?:ion|or)")
+                    || type.getName().endsWith(".$URLData")
+                    || type.getName().endsWith(".xsltc.trax.TemplatesImpl")
+                    || type.getName().startsWith("sun.reflect.")
+                    || type.getName().startsWith("sun.tracing.")
+                    || type.getName().startsWith("com.sun.corba.")
+                    || java.io.InputStream.class.isAssignableFrom(type)
+                    || "java.nio.channels.Channel".equals(type.getName())
+                    || "javax.activation.DataSource".equals(type.getName())
+                    || "javax.sql.rowset.BaseRowSet".equals(type.getName())
+                    // the following are sudble changes from generic workarounds
+                    || Void.class == type || void.class == type  // CVE-2017-7957
+                    || type.getName().equals("jdk.nashorn.internal.objects.NativeString") || type.getName().startsWith("javax.crypto.") || type.getName().endsWith("$LazyIterator") || type.getName().endsWith(".ReadAllStream$FileStream")  // CVE-2020-26258
+                    );
+            }
+
+            public Object unmarshal(HierarchicalStreamReader reader, UnmarshallingContext context) {
+                throw new ConversionException("Unsupported type due to security reasons.");
+            }
+
+            public void marshal(Object source, HierarchicalStreamWriter writer, MarshallingContext context) {
+                throw new ConversionException("Unsupported type due to security reasons.");
+            }
+        }, XStream.PRIORITY_VERY_HIGH);
+
         registerConverter(new IntConverter(), PRIORITY_NORMAL);
         registerConverter(new FloatConverter(), PRIORITY_NORMAL);
         registerConverter(new DoubleConverter(), PRIORITY_NORMAL);
