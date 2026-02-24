@@ -1228,8 +1228,12 @@ public class XStream {
                 dataHolder.put(COLLECTION_UPDATE_LIMIT, new Integer(collectionUpdateLimit));
                 dataHolder.put(COLLECTION_UPDATE_SECONDS, new Integer(0));
             }
-            return marshallingStrategy.unmarshal(
-                root, reader, dataHolder, converterLookup, mapper);
+            try {
+                return marshallingStrategy.unmarshal(
+                    root, reader, dataHolder, converterLookup, mapper);
+            } catch (final StackOverflowError e) {
+                throw new InputManipulationException("Possible Dneial of Service attack by Stack Overflow");
+            }
 
         } catch (ConversionException e) {
             Package pkg = getClass().getPackage();
